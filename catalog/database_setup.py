@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.engine import create_engine
 from sqlalchemy.types import DateTime
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -29,7 +30,7 @@ class Item(Base):
     title = Column(String(80), nullable=False)
     id = Column(Integer, primary_key=True)
     description = Column(String(250))
-    creation_date =  Column(DateTime, nullable=False)
+    creation_date =  Column(DateTime, nullable=False, default=func.now())
     category_id = Column(Integer, ForeignKey('categories.id'))
     category = relationship(Category)
 
