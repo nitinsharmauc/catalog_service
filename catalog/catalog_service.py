@@ -60,10 +60,8 @@ def delete_category(category):
 
 @app.route('/catalog/<string:categoryName>/<string:itemName>')
 def show_item(categoryName, itemName):
-    print(itemName)
     item = session.query(Item).filter_by(title=itemName).one()
     if(item):
-        print(item.title)
         return render_template("item.html", item=item)
     else:
         flash('Item {0} in category {1} not found'.format(itemName, categoryName))
@@ -119,9 +117,16 @@ def edit_item(categoryName, itemName):
         return render_template('editItem.html', categories=categories, category=category, item=item)
 
 
-@app.route('/catalog/<string:categoryName>/<string:itemName>/delete')
-def delete_item(categoryName, itemName):
-    return 'Delete Item {1} in Category {0}'.format(categoryName, itemName)
+@app.route('/catalog/items/<string:itemName>/delete', methods=['GET', 'POST'])
+def delete_item(itemName):
+    item = session.query(Item).filter_by(title=itemName).one()
+    if request.method == 'POST':
+        session.delete(item)
+        session.commit()
+        flash('Item {0} deleted successfully !'.format(item.title))
+        return redirect(url_for('show_catalog'))
+    else :
+        return render_template("deleteItem.html", item=item)
 
 
 @app.route('/catalog.json')
