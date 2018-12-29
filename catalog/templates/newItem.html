@@ -1,10 +1,15 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
+{% if category %}
 <div class="row">
-    <h1> New Item </h1>
+    <h1> Add New Item to {{category.name}} </h1>
 </div>
-
+{% else %}
+<div class="row">
+        <h1> Add New Item </h1>
+    </div>
+{% endif %}
 <form action="{{url_for('add_item')}}" method='POST'>
 
     <div class="row">
@@ -19,6 +24,8 @@
             <textarea name='description' rows="2" cols="30" placeholder='Description'></textarea>
         </div>
     </div>
+
+    {% if not category %}
     <div class="row">
         <div class="col-md-1">Category</div>
         <div class="col-md-11">
@@ -30,6 +37,7 @@
             </select>
         </div>
     </div>
+    {% endif %}
 
     <input type='submit' value='Create'>
 

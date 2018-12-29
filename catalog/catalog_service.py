@@ -75,7 +75,8 @@ def add_item():
             category_name = request.form['category']
             category = session.query(Category).filter_by(name=category_name).one()
             if category:
-                newItem = Item(title=request.form['title'], description=request.form['description'], category_id=category.id)
+                newItem = Item(title=request.form['title'], description=request.form['description'],
+                               category_id=category.id)
                 session.add(newItem)
                 session.commit()
                 flash('New Item added successfully!')
@@ -84,13 +85,25 @@ def add_item():
         return redirect(url_for('show_catalog'))
     else:
         categories = session.query(Category).all()
-        return render_template('newItem.html', categories=categories)
+        return render_template('newItem.html', categories=categories, category=None)
 
 
-
-@app.route('/catalog/<string:categoryName>/add')
-def add_item_to_category(categoryName):
-    return 'Adding item for Category {0}'.format(categoryName)
+@app.route('/catalog/<string:category_name>/items/new', methods=['GET', 'POST'])
+def add_item_to_category(category_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    if request.method == 'POST':
+        if request.form['title']:
+            if category:
+                new_item = Item(title=request.form['title'], description=request.form['description'],
+                               category_id=category.id)
+                session.add(new_item)
+                session.commit()
+                flash('New Item added successfully!')
+            else:
+                flash('Item add error. Category selected not present!')
+        return redirect(url_for('show_catalog'))
+    else:
+        return render_template('newItem.html', categories=None, category=category)
 
 
 @app.route('/catalog/<string:categoryName>/<string:itemName>/edit', methods=['GET', 'POST'])
