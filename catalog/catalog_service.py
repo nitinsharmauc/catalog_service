@@ -211,7 +211,7 @@ def edit_item(category_name, item_name):
                                item=item)
 
 
-@app.route('/catalog/items/<string:itemName>/delete', methods=['GET', 'POST'])
+@app.route('/catalog/items/<string:item_name>/delete', methods=['GET', 'POST'])
 def delete_item(item_name):
     item = session.query(Item).filter_by(title=item_name).one()
     if request.method == 'POST':
