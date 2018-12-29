@@ -95,9 +95,28 @@ def add_item_to_category(categoryName):
     return 'Adding item for Category {0}'.format(categoryName)
 
 
-@app.route('/catalog/<string:categoryName>/<string:itemName>/edit')
+@app.route('/catalog/<string:categoryName>/<string:itemName>/edit', methods=['GET', 'POST'])
 def edit_item(categoryName, itemName):
-    return 'Edit Item {1} in Category {0}'.format(categoryName, itemName)
+    if request.method == 'POST':
+        if request.form['title']:
+            category_name = request.form['category']
+            category = session.query(Category).filter_by(name=category_name).one()
+            item = session.query(Item).filter_by(title=itemName).one()
+            if category and item:
+                item.title = request.form['title']
+                item.description = request.form['description']
+                item.category_id = category.id
+                session.add(item)
+                session.commit()
+                flash('New Item added successfully!')
+            else:
+                flash('Item add error. Category or Item selected not present!')
+        return redirect(url_for('show_catalog'))
+    else:
+        categories = session.query(Category).all()
+        category = session.query(Category).filter_by(name=categoryName).one()
+        item = session.query(Item).filter_by(title=itemName).one()
+        return render_template('editItem.html', categories=categories, category=category, item=item)
 
 
 @app.route('/catalog/<string:categoryName>/<string:itemName>/delete')
