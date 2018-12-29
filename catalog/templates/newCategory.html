@@ -8,7 +8,8 @@
     <input type='text' size='30' name='name' placeholder='New Category name'>
 
     <input type='submit' value='Create'>
-
+    <a href="{{url_for('show_catalog')}}">
+        <button type="button">Cancel</button>
+    </a>
 </form>
-<a href="{{url_for('show_catalog')}}">Cancel</a>
 {% endblock %}

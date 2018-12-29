@@ -7,40 +7,44 @@
 </div>
 {% else %}
 <div class="row">
-        <h1> Add New Item </h1>
-    </div>
+    <h1> Add New Item </h1>
+</div>
 {% endif %}
+{% if category %}
+<form action="{{url_for('add_item_to_category', category_name=category.name)}}" method='POST'>
+{% else %}
 <form action="{{url_for('add_item')}}" method='POST'>
-
-    <div class="row">
-        <div class="col-md-1">Title</div>
-        <div class="col-md-11">
-            <input type='text' size='30' name='title' placeholder='New Item title'>
+{% endif %}
+        <div class="row">
+            <div class="col-md-1">Title</div>
+            <div class="col-md-11">
+                <input type='text' size='30' name='title' placeholder='New Item title'>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-1">Description</div>
-        <div class="col-md-11">
-            <textarea name='description' rows="2" cols="30" placeholder='Description'></textarea>
+        <div class="row">
+            <div class="col-md-1">Description</div>
+            <div class="col-md-11">
+                <textarea name='description' rows="2" cols="30" placeholder='Description'></textarea>
+            </div>
         </div>
-    </div>
 
-    {% if not category %}
-    <div class="row">
-        <div class="col-md-1">Category</div>
-        <div class="col-md-11">
+        {% if not category %}
+        <div class="row">
+            <div class="col-md-1">Category</div>
+            <div class="col-md-11">
 
-            <select name='category'>
-                {% for c in categories %}
-                <option value={{c.name}}>{{c.name}}</option>
-                {% endfor %}
-            </select>
+                <select name='category'>
+                    {% for c in categories %}
+                    <option value={{c.name}}>{{c.name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <input type='submit' value='Create'>
-
-</form>
-<a href="{{url_for('show_catalog')}}">Cancel</a>
-{% endblock %}
+        <input type='submit' value='Create'>
+        <a href="{{url_for('show_catalog')}}">
+            <button type="button">Cancel</button>
+        </a>
+    </form>
+    {% endblock %}

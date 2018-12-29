@@ -48,14 +48,39 @@ def add_category():
         return render_template('newCategory.html')
 
 
-@app.route('/catalog/<string:category>')
-def edit_category(category):
-    return 'Edit Category {0}'.format(category)
+@app.route('/catalog/<string:category_name>', methods=['GET','POST'])
+def edit_category(category_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    if category :
+        if request.method == 'POST':
+            if request.form['name']:
+                category.name = name=request.form['name']
+                session.add(category)
+                session.commit()
+                flash('Category {0} edited successfully!'.format(category_name))
+            return redirect(url_for('show_catalog'))
+        else:
+            return render_template('editCategory.html', category_name=category_name)
+    else :
+        flash('Category {0} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
 
 
-@app.route('/catalog/<string:category>/delete')
-def delete_category(category):
-    return 'Delete Category {0}'.format(category)
+@app.route('/catalog/<string:category_name>/delete', methods=['GET','POST'])
+def delete_category(category_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    if category :
+        if request.method == 'POST':
+            items = session.query(Item).filter_by(category_id=category.id).delete()
+            session.delete(category)
+            session.commit()
+            flash('Category {0} deleted successfully !'.format(category.name))
+            return redirect(url_for('show_catalog'))
+        else :
+            return render_template("deleteCategory.html", category=category)
+    else :
+        flash('Category {} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
 
 
 @app.route('/catalog/<string:categoryName>/<string:itemName>')

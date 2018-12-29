@@ -26,9 +26,9 @@
             <select name='category'>
                 {% for c in categories %}
                 {% if c.name == category.name%}
-                    <option value={{c.name}} selected>{{c.name}}</option>
+                <option value={{c.name}} selected>{{c.name}}</option>
                 {% else %}
-                    <option value={{c.name}}>{{c.name}}</option>
+                <option value={{c.name}}>{{c.name}}</option>
                 {% endif %}
                 {% endfor %}
             </select>
@@ -36,7 +36,8 @@
     </div>
 
     <input type='submit' value='Save'>
-
+    <a href="{{url_for('show_catalog')}}">
+        <button type="button">Cancel</button>
+    </a>
 </form>
-<a href="{{url_for('show_catalog')}}">Cancel</a>
 {% endblock %}
