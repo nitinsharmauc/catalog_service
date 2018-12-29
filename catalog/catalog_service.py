@@ -10,8 +10,8 @@ from database_setup import Base, Category, Item
 app = Flask(__name__)
 
 engine = create_engine('postgresql:///catalog')
-Base.metadata.bind=engine
-DBSession = sessionmaker(bind = engine)
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
@@ -27,20 +27,34 @@ def show_catalog():
     return render_template("catalog.html", categories=categories, items=items)
 
 
-@app.route('/catalog/<string:categoryName>/items')
-def show_category(categoryName):
-    categories = session.query(Category).all()
-    selectedCategory = session.query(Category).filter_by(name=categoryName).one()
-    items = session.query(Item).filter_by(category_id=selectedCategory.id).all()
-    return render_template("category.html", categories=categories, items=items, selectedCategory=selectedCategory)
+@app.route('/catalog/<string:category_name>/items')
+def show_category(category_name):
+    categories = session\
+        .query(Category)\
+        .all()
+
+    selected_category = session\
+        .query(Category)\
+        .filter_by(name=category_name)\
+        .one()
+
+    items = session\
+        .query(Item)\
+        .filter_by(category_id=selected_category.id)\
+        .all()
+
+    return render_template("category.html",
+                           categories=categories,
+                           items=items,
+                           selectedCategory=selected_category)
 
 
 @app.route('/catalog/categories/new', methods=['GET', 'POST'])
 def add_category():
     if request.method == 'POST':
         if request.form['name']:
-            newCategory = Category(name=request.form['name'])
-            session.add(newCategory)
+            new_category = Category(name=request.form['name'])
+            session.add(new_category)
             session.commit()
             flash('New Category added successfully!')
         return redirect(url_for('show_catalog'))
@@ -48,48 +62,61 @@ def add_category():
         return render_template('newCategory.html')
 
 
-@app.route('/catalog/<string:category_name>', methods=['GET','POST'])
+@app.route('/catalog/<string:category_name>', methods=['GET', 'POST'])
 def edit_category(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
-    if category :
+    if category:
         if request.method == 'POST':
             if request.form['name']:
-                category.name = name=request.form['name']
+                category.name = request.form['name']
                 session.add(category)
                 session.commit()
-                flash('Category {0} edited successfully!'.format(category_name))
+                flash('Category {0} edited successfully!'
+                      .format(category_name))
             return redirect(url_for('show_catalog'))
         else:
-            return render_template('editCategory.html', category_name=category_name)
-    else :
+            return render_template('editCategory.html',
+                                   category_name=category_name)
+    else:
         flash('Category {0} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
 
 
-@app.route('/catalog/<string:category_name>/delete', methods=['GET','POST'])
+@app.route('/catalog/<string:category_name>/delete', methods=['GET', 'POST'])
 def delete_category(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
-    if category :
+    if category:
         if request.method == 'POST':
-            items = session.query(Item).filter_by(category_id=category.id).delete()
+            items = session\
+                .query(Item)\
+                .filter_by(category_id=category.id)\
+                .delete()
+
             session.delete(category)
             session.commit()
-            flash('Category {0} deleted successfully !'.format(category.name))
+            flash('Category {0} deleted successfully !'
+                  .format(category.name))
             return redirect(url_for('show_catalog'))
-        else :
-            return render_template("deleteCategory.html", category=category)
-    else :
+        else:
+            return render_template("deleteCategory.html",
+                                   category=category)
+    else:
         flash('Category {} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
 
 
-@app.route('/catalog/<string:categoryName>/<string:itemName>')
-def show_item(categoryName, itemName):
-    item = session.query(Item).filter_by(title=itemName).one()
-    if(item):
+@app.route('/catalog/<string:category_name>/<string:item_name>')
+def show_item(category_name, item_name):
+    item = session\
+        .query(Item)\
+        .filter_by(title=item_name)\
+        .one()
+
+    if item:
         return render_template("item.html", item=item)
     else:
-        flash('Item {0} in category {1} not found'.format(itemName, categoryName))
+        flash('Item {0} in category {1} not found'
+              .format(item_name, category_name))
         return redirect(url_for('show_catalog'))
 
 
@@ -98,29 +125,14 @@ def add_item():
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
-            category = session.query(Category).filter_by(name=category_name).one()
+            category = session\
+                .query(Category)\
+                .filter_by(name=category_name)\
+                .one()
             if category:
-                newItem = Item(title=request.form['title'], description=request.form['description'],
-                               category_id=category.id)
-                session.add(newItem)
-                session.commit()
-                flash('New Item added successfully!')
-            else:
-                flash('Item add error. Category selected not present!')
-        return redirect(url_for('show_catalog'))
-    else:
-        categories = session.query(Category).all()
-        return render_template('newItem.html', categories=categories, category=None)
-
-
-@app.route('/catalog/<string:category_name>/items/new', methods=['GET', 'POST'])
-def add_item_to_category(category_name):
-    category = session.query(Category).filter_by(name=category_name).one()
-    if request.method == 'POST':
-        if request.form['title']:
-            if category:
-                new_item = Item(title=request.form['title'], description=request.form['description'],
-                               category_id=category.id)
+                new_item = Item(title=request.form['title'],
+                                description=request.form['description'],
+                                category_id=category.id)
                 session.add(new_item)
                 session.commit()
                 flash('New Item added successfully!')
@@ -128,16 +140,53 @@ def add_item_to_category(category_name):
                 flash('Item add error. Category selected not present!')
         return redirect(url_for('show_catalog'))
     else:
-        return render_template('newItem.html', categories=None, category=category)
+        categories = session.query(Category).all()
+        return render_template('newItem.html',
+                               categories=categories,
+                               category=None)
 
 
-@app.route('/catalog/<string:categoryName>/<string:itemName>/edit', methods=['GET', 'POST'])
-def edit_item(categoryName, itemName):
+@app.route('/catalog/<string:category_name>/items/new',
+           methods=['GET', 'POST'])
+def add_item_to_category(category_name):
+    category = session\
+        .query(Category)\
+        .filter_by(name=category_name)\
+        .one()
+    if request.method == 'POST':
+        if request.form['title']:
+            if category:
+                new_item = Item(title=request.form['title'],
+                                description=request.form['description'],
+                                category_id=category.id)
+                session.add(new_item)
+                session.commit()
+                flash('New Item added successfully!')
+            else:
+                flash('Item add error. Category selected not present!')
+        return redirect(url_for('show_catalog'))
+    else:
+        return render_template('newItem.html',
+                               categories=None,
+                               category=category)
+
+
+@app.route('/catalog/<string:category_name>/<string:item_name>/edit',
+           methods=['GET', 'POST'])
+def edit_item(category_name, item_name):
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
-            category = session.query(Category).filter_by(name=category_name).one()
-            item = session.query(Item).filter_by(title=itemName).one()
+            category = session\
+                .query(Category)\
+                .filter_by(name=category_name)\
+                .one()
+
+            item = session\
+                .query(Item)\
+                .filter_by(title=item_name)\
+                .one()
+
             if category and item:
                 item.title = request.form['title']
                 item.description = request.form['description']
@@ -147,23 +196,30 @@ def edit_item(categoryName, itemName):
                 flash('New Item added successfully!')
             else:
                 flash('Item add error. Category or Item selected not present!')
+
         return redirect(url_for('show_catalog'))
     else:
         categories = session.query(Category).all()
-        category = session.query(Category).filter_by(name=categoryName).one()
-        item = session.query(Item).filter_by(title=itemName).one()
-        return render_template('editItem.html', categories=categories, category=category, item=item)
+        category = session.query(Category).filter_by(name=category_name).one()
+        item = session\
+            .query(Item)\
+            .filter_by(title=item_name)\
+            .one()
+        return render_template('editItem.html',
+                               categories=categories,
+                               category=category,
+                               item=item)
 
 
 @app.route('/catalog/items/<string:itemName>/delete', methods=['GET', 'POST'])
-def delete_item(itemName):
-    item = session.query(Item).filter_by(title=itemName).one()
+def delete_item(item_name):
+    item = session.query(Item).filter_by(title=item_name).one()
     if request.method == 'POST':
         session.delete(item)
         session.commit()
         flash('Item {0} deleted successfully !'.format(item.title))
         return redirect(url_for('show_catalog'))
-    else :
+    else:
         return render_template("deleteItem.html", item=item)
 
 

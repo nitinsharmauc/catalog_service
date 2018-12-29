@@ -22,7 +22,8 @@ class Category(Base):
 
         return {
             'name': self.name,
-            'id': self.id,}
+            'id': self.id, }
+
 
 class Item(Base):
     __tablename__ = "items"
@@ -30,7 +31,7 @@ class Item(Base):
     title = Column(String(80), nullable=False)
     id = Column(Integer, primary_key=True)
     description = Column(String(250))
-    creation_date =  Column(DateTime, nullable=False, default=func.now())
+    creation_date = Column(DateTime, nullable=False, default=func.now())
     category_id = Column(Integer, ForeignKey('categories.id'))
     category = relationship(Category)
 
@@ -42,10 +43,9 @@ class Item(Base):
             'title': self.title,
             'id': self.id,
             'description': self.description,
-            'category_id': self.category_id,}
+            'category_id': self.category_id, }
 
 
-#engine = create_engine('sqlite:///catalog.db')
 engine = create_engine('postgresql:///catalog')
 
 Base.metadata.create_all(engine)
