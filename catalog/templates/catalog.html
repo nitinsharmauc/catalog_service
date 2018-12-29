@@ -7,8 +7,8 @@
         <h2>Categories</h2>
     </div>
     <div class="col-md-8">
-        <a href='{{url_for("add_item_to_category", categoryName=selectedCategory.name)}}'>Add Item</a>
-        <h2>{{selectedCategory.name}}</h2>
+        <a href='{{url_for("add_item")}}'>Add Item</a>
+        <h2>Latest Items</h2>
     </div>
 </div>
 <div class="row bg-info">
@@ -22,7 +22,8 @@
     <div class="col-md-8">
         {% for i in items %}
         <div>
-            <a href='{{url_for("show_item", categoryName=i.category.name, itemName=i.title)}}'>{{i.title}}</a>
+            <a href='{{url_for("show_item", categoryName=i.category.name, itemName=i.title)}}'>{{i.title}}
+                ({{i.category.name}})</a>
         </div>
         {% endfor %}
     </div>

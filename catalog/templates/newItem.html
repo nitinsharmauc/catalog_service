@@ -1,49 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<div class="row">
+    <h1> New Item </h1>
+</div>
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='bootstrap.min.css') }}">
-</head>
+<form action="{{url_for('add_item')}}" method='POST'>
 
-<body>
-    <div class="container">
-        <div class="row">
-            <h1> New Item </h1>
+    <div class="row">
+        <div class="col-md-1">Title</div>
+        <div class="col-md-11">
+            <input type='text' size='30' name='title' placeholder='New Item title'>
         </div>
-
-        <form action="{{url_for('add_item')}}" method='POST'>
-
-            <div class="row">
-                <div class="col-md-1">Title</div>
-                <div class="col-md-11">
-                    <input type='text' size='30' name='title' placeholder='New Item title'>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-1">Description</div>
-                <div class="col-md-11">
-                    <input type='text' size='30' name='description' placeholder='Description'>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-1">Category</div>
-                <div class="col-md-11">
-
-                    <select name='category'>
-                        {% for c in categories %}
-                        <option value={{c.name}}>{{c.name}}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <input type='submit' value='Create'>
-
-        </form>
-        <a href="{{url_for('show_catalog')}}">Cancel</a>
     </div>
-</body>
+    <div class="row">
+        <div class="col-md-1">Description</div>
+        <div class="col-md-11">
+            <input type='text' size='30' name='description' placeholder='Description'>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-1">Category</div>
+        <div class="col-md-11">
 
-</html>
+            <select name='category'>
+                {% for c in categories %}
+                <option value={{c.name}}>{{c.name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <input type='submit' value='Create'>
+
+</form>
+<a href="{{url_for('show_catalog')}}">Cancel</a>
+{% endblock %}

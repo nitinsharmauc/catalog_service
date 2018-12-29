@@ -24,12 +24,15 @@ def root():
 def show_catalog():
     categories = session.query(Category).all()
     items = session.query(Item).order_by(Item.creation_date.desc()).limit(3)
-    return render_template("main.html", categories=categories, items=items)
+    return render_template("catalog.html", categories=categories, items=items)
 
 
-@app.route('/catalog/<string:category>/items')
-def show_category(category):
-    return 'Category {0} and Its Items'.format(category)
+@app.route('/catalog/<string:categoryName>/items')
+def show_category(categoryName):
+    categories = session.query(Category).all()
+    selectedCategory = session.query(Category).filter_by(name=categoryName).one()
+    items = session.query(Item).filter_by(category_id=selectedCategory.id).all()
+    return render_template("category.html", categories=categories, items=items, selectedCategory=selectedCategory)
 
 
 @app.route('/catalog/categories/new', methods=['GET', 'POST'])
@@ -55,9 +58,16 @@ def delete_category(category):
     return 'Delete Category {0}'.format(category)
 
 
-@app.route('/catalog/<string:category>/<string:item>')
-def show_item(category, item):
-    return 'Category {0} and Item {1}'.format(category, item)
+@app.route('/catalog/<string:categoryName>/<string:itemName>')
+def show_item(categoryName, itemName):
+    print(itemName)
+    item = session.query(Item).filter_by(title=itemName).one()
+    if(item):
+        print(item.title)
+        return render_template("item.html", item=item)
+    else:
+        flash('Item {0} in category {1} not found'.format(itemName, categoryName))
+        return redirect(url_for('show_catalog'))
 
 
 @app.route('/catalog/items/new', methods=['GET', 'POST'])
@@ -80,19 +90,19 @@ def add_item():
 
 
 
-@app.route('/catalog/<string:category>/add')
-def add_item_to_category(category):
-    return 'Adding item for Category {0}'.format(category)
+@app.route('/catalog/<string:categoryName>/add')
+def add_item_to_category(categoryName):
+    return 'Adding item for Category {0}'.format(categoryName)
 
 
-@app.route('/catalog/<string:category>/<string:item>/edit')
-def edit_item(category, item):
-    return 'Edit Item {1} in Category {0}'.format(category, item)
+@app.route('/catalog/<string:categoryName>/<string:itemName>/edit')
+def edit_item(categoryName, itemName):
+    return 'Edit Item {1} in Category {0}'.format(categoryName, itemName)
 
 
-@app.route('/catalog/<string:category>/<string:item>/delete')
-def delete_item(category, item):
-    return 'Delete Item {1} in Category {0}'.format(category, item)
+@app.route('/catalog/<string:categoryName>/<string:itemName>/delete')
+def delete_item(categoryName, itemName):
+    return 'Delete Item {1} in Category {0}'.format(categoryName, itemName)
 
 
 @app.route('/catalog.json')

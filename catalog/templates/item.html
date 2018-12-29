@@ -1,10 +1,22 @@
-<html>
-
-<body>
-
-<head>
-</head>
-<h1>{{name}}</h1>
-</body>
-
-</html>
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+<div class="row bg-info">
+    <div class="col-md-12">
+        <h2>{{item.title}}</h2>
+    </div>
+</div>
+<div class="row bg-info">
+    <div class="col-md-12">
+        <p>{{item.description}}</a>
+    </div>
+</div>
+<div class="row bg-info">
+    <div class="col-md-1">
+        <a href='{{url_for("edit_item", categoryName=item.category.name, itemName=item.title)}}'>Edit</a>
+    </div>
+    <div class="col-md-1">
+        <a href='{{url_for("delete_item", categoryName=item.category.name, itemName=item.title)}}'>Delete</a>
+    </div>
+</div>
+{% endblock %}
