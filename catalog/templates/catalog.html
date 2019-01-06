@@ -1,16 +1,24 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
+{% if user_logged_in %}
 <div class="row bg-info">
     <div class="col-md-4">
         <a href='{{url_for("add_category")}}'>Add Category</a>
-        <h2>Categories</h2>
     </div>
     <div class="col-md-8">
         <a href='{{url_for("add_item")}}'>Add Item</a>
-        <h2>Latest Items</h2>
     </div>
 </div>
+{% endif %}
+<div class="row bg-info">
+        <div class="col-md-4">
+            <h2>Categories</h2>
+        </div>
+        <div class="col-md-8">
+            <h2>Latest Items</h2>
+        </div>
+    </div>
 <div class="row bg-info">
     <div class="col-md-4">
         {% for c in categories %}

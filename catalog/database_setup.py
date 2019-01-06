@@ -9,12 +9,32 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(250), nullable=False)
+    email = Column(String(250), nullable=False)
+    picture = Column(String(250))
+
+# serializable format for JSON
+    @property
+    def serialize(self):
+
+        return {
+            'name': self.name,
+            'id': self.id,
+            'email': self.email,
+            'picture': self.picture,}
+
 
 class Category(Base):
     __tablename__ = 'categories'
 
     name = Column(String(250), nullable=False)
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(User)
 
 # serializable format for JSON
     @property
@@ -34,6 +54,8 @@ class Item(Base):
     creation_date = Column(DateTime, nullable=False, default=func.now())
     category_id = Column(Integer, ForeignKey('categories.id'))
     category = relationship(Category)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(User)
 
 # serializable format for JSON
     @property
