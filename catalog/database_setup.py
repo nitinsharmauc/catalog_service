@@ -1,5 +1,3 @@
-import sys
-
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -8,6 +6,7 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.sql import func
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "users"
@@ -25,7 +24,8 @@ class User(Base):
             'name': self.name,
             'id': self.id,
             'email': self.email,
-            'picture': self.picture,}
+            'picture': self.picture,
+        }
 
 
 class Category(Base):
@@ -44,7 +44,7 @@ class Category(Base):
         return {
             'name': self.name,
             'id': self.id,
-            'Items' : [i.serialize for i in self.items]
+            'Items': [i.serialize for i in self.items]
         }
 
 
@@ -71,6 +71,15 @@ class Item(Base):
             'category_id': self.category_id, }
 
 
-engine = create_engine('postgresql:///catalog')
+if __name__ == "__main__":
+    # Creating database catalog
+    # https://stackoverflow.com/questions/6506578/how-to-create-a-new-database-using-sqlalchemy
+    engine = create_engine('postgresql:///postgres')
+    connection = engine.connect()
+    connection.execute('commit')
+    connection.execute("create database catalog")
+    connection.close()
 
-Base.metadata.create_all(engine)
+    # Connect to catalog db and create tables
+    engine = create_engine('postgresql:///catalog')
+    Base.metadata.create_all(engine)

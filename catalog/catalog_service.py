@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-from flask import Flask, redirect, url_for, render_template, request, flash, jsonify
+from flask import Flask, redirect,\
+    url_for, render_template,\
+    request, flash, jsonify
 # imports for the login
 from flask import session as login_session
 from oauth2client.client import flow_from_clientsecrets
@@ -30,13 +32,15 @@ CLIENT_ID = json.loads(
 APPLICATION_NAME = "Catalog app Client"
 
 
-def render_template_with_state(template_name_or_list, **context):
+def __render_template_with_state(template_name_or_list, **context):
+    """Utility function to create secret session key as well as
+    login checks, before rendering any page
+    """
     state = ''.join(
         random.choice(string.ascii_uppercase + string.digits)
         for x in range(32))
     login_session["state"] = state
     user_logged_in = 'user_id' in login_session
-    print(user_logged_in)
     return render_template(template_name_or_list, STATE=state,
                            user_logged_in=user_logged_in,
                            **context)
@@ -45,9 +49,6 @@ def render_template_with_state(template_name_or_list, **context):
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
-    print(request.args.get('state'))
-    print('\n')
-    print(login_session['state'])
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -55,7 +56,6 @@ def gconnect():
     # Obtain authorization code, now compatible with Python3
     request.get_data()
     code = request.data.decode('utf-8')
-    print(code)
 
     try:
         # Upgrade the authorization code into a credentials object
@@ -70,7 +70,6 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    print(access_token)
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     # Submit request, parse response - Python3 compatible
@@ -87,7 +86,6 @@ def gconnect():
 
     # Verify that the access token is used for the intended user.
     gplus_id = credentials.id_token['sub']
-    print(gplus_id)
     if result['user_id'] != gplus_id:
         response = make_response(
             json.dumps("Token's user ID doesn't match given user ID."), 401)
@@ -110,7 +108,6 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    print('storing new values')
     # Store the access token in the session for later use.
     login_session['access_token'] = access_token
     login_session['gplus_id'] = gplus_id
@@ -125,10 +122,6 @@ def gconnect():
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
-
-    print(data['name'])
-    print(data['picture'])
-    print(data['email'])
 
     # see if user exists, if it doesn't make a new one
     user_id = get_user_id(login_session['email'])
@@ -149,7 +142,6 @@ def gconnect():
 def gdisconnect():
     # Only disconnect a connected user.
     access_token = login_session.get('access_token')
-    print(access_token)
     if access_token is None:
         response = make_response(
             json.dumps('Current user not connected.'), 401)
@@ -163,8 +155,6 @@ def gdisconnect():
     str_response = responseData[1].decode('utf-8')
     response_json = json.loads(str_response)
 
-    print(result['status'])
-    print(response_json.get('error'))
     if result['status'] == '200' \
             or response_json.get('error') == "invalid_token":
         # Reset the user's sesson.
@@ -193,15 +183,18 @@ def create_user(login_session):
 
 
 def get_user_info(user_id):
-    user = session.query(User).filter_by(id=user_id).one()
-    return user
+    try:
+        user = session.query(User).filter_by(id=user_id).one()
+        return user
+    except exc.NoResultFound:
+        return None
 
 
 def get_user_id(email):
-    user = session.query(User).filter_by(email=email).one()
-    if user:
+    try:
+        user = session.query(User).filter_by(email=email).one()
         return user.id
-    else:
+    except exc.NoResultFound:
         return None
 
 
@@ -214,8 +207,8 @@ def root():
 def show_catalog():
     categories = session.query(Category).all()
     items = session.query(Item).order_by(Item.creation_date.desc()).limit(3)
-    return render_template_with_state("catalog.html", categories=categories,
-                                      items=items)
+    return __render_template_with_state("catalog.html", categories=categories,
+                                        items=items)
 
 
 @app.route('/catalog/<string:category_name>/items')
@@ -241,11 +234,11 @@ def show_category(category_name):
     user_authorized = 'user_id' in login_session and\
                       selected_category.user.id == login_session["user_id"]
 
-    return render_template_with_state("category.html",
-                                      categories=categories,
-                                      items=items,
-                                      selectedCategory=selected_category,
-                                      user_authorized=user_authorized)
+    return __render_template_with_state("category.html",
+                                        categories=categories,
+                                        items=items,
+                                        selectedCategory=selected_category,
+                                        user_authorized=user_authorized)
 
 
 @app.route('/catalog/categories/new', methods=['GET', 'POST'])
@@ -262,7 +255,7 @@ def add_category():
             flash('New Category added successfully!')
         return redirect(url_for('show_catalog'))
     else:
-        return render_template_with_state('newCategory.html')
+        return __render_template_with_state('newCategory.html')
 
 
 @app.route('/catalog/<string:category_name>/edit', methods=['GET', 'POST'])
@@ -291,8 +284,8 @@ def edit_category(category_name):
                       .format(category_name))
             return redirect(url_for('show_catalog'))
         else:
-            return render_template_with_state('editCategory.html',
-                                              category_name=category_name)
+            return __render_template_with_state('editCategory.html',
+                                                category_name=category_name)
     else:
         flash('Category {0} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
@@ -327,8 +320,8 @@ def delete_category(category_name):
                   .format(category.name))
             return redirect(url_for('show_catalog'))
         else:
-            return render_template_with_state("deleteCategory.html",
-                                              category=category)
+            return __render_template_with_state("deleteCategory.html",
+                                                category=category)
     else:
         flash('Category {} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
@@ -349,8 +342,8 @@ def show_item(category_name, item_name):
                       item.user_id == login_session['user_id']
 
     if item:
-        return render_template_with_state("item.html", item=item,
-                                          user_authorized=user_authorized)
+        return __render_template_with_state("item.html", item=item,
+                                            user_authorized=user_authorized)
     else:
         flash('Item {0} in category {1} not found'
               .format(item_name, category_name))
@@ -395,9 +388,9 @@ def add_item():
             .query(Category)\
             .filter_by(user_id=login_session['user_id'])\
             .all()
-        return render_template_with_state('newItem.html',
-                                          categories=categories,
-                                          category=None)
+        return __render_template_with_state('newItem.html',
+                                            categories=categories,
+                                            category=None)
 
 
 @app.route('/catalog/<string:category_name>/items/new',
@@ -418,24 +411,22 @@ def add_item_to_category(category_name):
 
     if request.method == 'POST':
         if request.form['title']:
-            if category:
-                if category.user_id != login_session['user_id']:
-                    flash('You are not authorized to add item to {}'
-                          .format(category.name))
-                    return redirect(url_for('show_catalog'))
-                new_item = Item(title=request.form['title'],
-                                description=request.form['description'],
-                                category_id=category.id)
-                session.add(new_item)
-                session.commit()
-                flash('New Item added successfully!')
-            else:
-                flash('Item add error. Category selected not present!')
+            if category.user_id != login_session['user_id']:
+                flash('You are not authorized to add item to {}'
+                      .format(category.name))
+                return redirect(url_for('show_catalog'))
+
+            new_item = Item(title=request.form['title'],
+                            description=request.form['description'],
+                            category_id=category.id)
+            session.add(new_item)
+            session.commit()
+            flash('New Item added successfully!')
         return redirect(url_for('show_catalog'))
     else:
-        return render_template_with_state('newItem.html',
-                                          categories=None,
-                                          category=category)
+        return __render_template_with_state('newItem.html',
+                                            categories=None,
+                                            category=category)
 
 
 @app.route('/catalog/<string:category_name>/<string:item_name>/edit',
@@ -501,10 +492,10 @@ def edit_item(category_name, item_name):
             flash('{0} or {1} not found'.format(category_name, item_name))
             return redirect(url_for('show_catalog'))
 
-        return render_template_with_state('editItem.html',
-                                          categories=categories,
-                                          category=category,
-                                          item=item)
+        return __render_template_with_state('editItem.html',
+                                            categories=categories,
+                                            category=category,
+                                            item=item)
 
 
 @app.route('/catalog/items/<string:item_name>/delete', methods=['GET', 'POST'])
@@ -529,7 +520,7 @@ def delete_item(item_name):
         flash('Item {0} deleted successfully !'.format(item.title))
         return redirect(url_for('show_catalog'))
     else:
-        return render_template_with_state("deleteItem.html", item=item)
+        return __render_template_with_state("deleteItem.html", item=item)
 
 
 @app.route('/catalog/json')
@@ -562,9 +553,8 @@ def item_json(category_name, item_name):
             Error='Item or Category not found')
 
     if item.category_id != category.id:
-        return jsonify(
-            Error='Item {0} does not belong to Category {1}'
-                .format(item_name, category_name))
+        return jsonify(Error='Item {0} does not belong to Category {1}'
+                       .format(item_name, category_name))
 
     return jsonify(Categories=item.serialize)
 
