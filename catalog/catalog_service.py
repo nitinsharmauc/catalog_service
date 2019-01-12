@@ -9,7 +9,8 @@ import httplib2
 import json
 from flask import make_response
 import requests
-import random, string
+import random
+import string
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -31,7 +32,8 @@ APPLICATION_NAME = "Catalog app Client"
 
 def render_template_with_state(template_name_or_list, **context):
     state = ''.join(
-        random.choice(string.ascii_uppercase + string.digits) for x in range(32))
+        random.choice(string.ascii_uppercase + string.digits)
+        for x in range(32))
     login_session["state"] = state
     user_logged_in = 'user_id' in login_session
     print(user_logged_in)
@@ -102,8 +104,9 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(
+            json.dumps('Current user is already connected.'),
+            200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -137,11 +140,7 @@ def gconnect():
     output += '<h1>Welcome, '
     output += login_session['username']
     output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
-
 
     return output
 
@@ -166,7 +165,8 @@ def gdisconnect():
 
     print(result['status'])
     print(response_json.get('error'))
-    if result['status'] == '200' or response_json.get('error') == "invalid_token":
+    if result['status'] == '200' \
+            or response_json.get('error') == "invalid_token":
         # Reset the user's sesson.
         del login_session['access_token']
         del login_session['gplus_id']
@@ -198,10 +198,10 @@ def get_user_info(user_id):
 
 
 def get_user_id(email):
-    try:
-        user = session.query(User).filter_by(email=email).one()
+    user = session.query(User).filter_by(email=email).one()
+    if user:
         return user.id
-    except:
+    else:
         return None
 
 
@@ -214,7 +214,8 @@ def root():
 def show_catalog():
     categories = session.query(Category).all()
     items = session.query(Item).order_by(Item.creation_date.desc()).limit(3)
-    return render_template_with_state("catalog.html", categories=categories, items=items)
+    return render_template_with_state("catalog.html", categories=categories,
+                                      items=items)
 
 
 @app.route('/catalog/<string:category_name>/items')
@@ -233,17 +234,25 @@ def show_category(category_name):
         .filter_by(category_id=selected_category.id)\
         .all()
 
+    user_authorized = 'user_id' in login_session and\
+                      selected_category.user.id == login_session["user_id"]
+
     return render_template_with_state("category.html",
-                           categories=categories,
-                           items=items,
-                           selectedCategory=selected_category)
+                                      categories=categories,
+                                      items=items,
+                                      selectedCategory=selected_category,
+                                      user_authorized=user_authorized)
 
 
 @app.route('/catalog/categories/new', methods=['GET', 'POST'])
 def add_category():
+    if 'user_id' not in login_session:
+        flash('Please login to add new category!')
+        return redirect(url_for('show_catalog'))
     if request.method == 'POST':
         if request.form['name']:
-            new_category = Category(name=request.form['name'])
+            new_category = Category(name=request.form['name'],
+                                    user_id=login_session['user_id'])
             session.add(new_category)
             session.commit()
             flash('New Category added successfully!')
@@ -256,6 +265,11 @@ def add_category():
 def edit_category(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
     if category:
+        if 'user_id' in login_session and \
+                category.user_id != login_session['user_id']:
+            flash('You are not authorized to edit {}!'
+                  .format(category.name))
+            return redirect(url_for('show_catalog'))
         if request.method == 'POST':
             if request.form['name']:
                 category.name = request.form['name']
@@ -266,7 +280,7 @@ def edit_category(category_name):
             return redirect(url_for('show_catalog'))
         else:
             return render_template_with_state('editCategory.html',
-                                   category_name=category_name)
+                                              category_name=category_name)
     else:
         flash('Category {0} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
@@ -276,6 +290,11 @@ def edit_category(category_name):
 def delete_category(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
     if category:
+        if 'user_id' in login_session and\
+                category.user_id != login_session['user_id']:
+            flash('You are not authorized to delete {}'
+                  .format(category.name))
+            return redirect(url_for('show_catalog'))
         if request.method == 'POST':
             items = session\
                 .query(Item)\
@@ -289,7 +308,7 @@ def delete_category(category_name):
             return redirect(url_for('show_catalog'))
         else:
             return render_template_with_state("deleteCategory.html",
-                                   category=category)
+                                              category=category)
     else:
         flash('Category {} not found'.format(category_name))
         return redirect(url_for('show_catalog'))
@@ -302,8 +321,12 @@ def show_item(category_name, item_name):
         .filter_by(title=item_name)\
         .one()
 
+    user_authorized = 'user_id' in login_session and \
+                      item.user_id == login_session['user_id']
+
     if item:
-        return render_template_with_state("item.html", item=item)
+        return render_template_with_state("item.html", item=item,
+                                          user_authorized=user_authorized)
     else:
         flash('Item {0} in category {1} not found'
               .format(item_name, category_name))
@@ -312,6 +335,10 @@ def show_item(category_name, item_name):
 
 @app.route('/catalog/items/new', methods=['GET', 'POST'])
 def add_item():
+    if 'user_id' not in login_session:
+        flash('Please login to add new Item!')
+        return redirect(url_for('show_catalog'))
+
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
@@ -320,9 +347,14 @@ def add_item():
                 .filter_by(name=category_name)\
                 .one()
             if category:
+                if category.user_id != login_session['user_id']:
+                    flash('You are not authorized to add item to {}'
+                          .format(category.name))
+                    return redirect(url_for('show_catalog'))
                 new_item = Item(title=request.form['title'],
                                 description=request.form['description'],
-                                category_id=category.id)
+                                category_id=category.id,
+                                user_id=category.user_id)
                 session.add(new_item)
                 session.commit()
                 flash('New Item added successfully!')
@@ -332,13 +364,17 @@ def add_item():
     else:
         categories = session.query(Category).all()
         return render_template_with_state('newItem.html',
-                               categories=categories,
-                               category=None)
+                                          categories=categories,
+                                          category=None)
 
 
 @app.route('/catalog/<string:category_name>/items/new',
            methods=['GET', 'POST'])
 def add_item_to_category(category_name):
+    if 'user_id' not in login_session:
+        flash('Please login to add new Item!')
+        return redirect(url_for('show_catalog'))
+
     category = session\
         .query(Category)\
         .filter_by(name=category_name)\
@@ -346,6 +382,10 @@ def add_item_to_category(category_name):
     if request.method == 'POST':
         if request.form['title']:
             if category:
+                if category.user_id != login_session['user_id']:
+                    flash('You are not authorized to add item to {}'
+                          .format(category.name))
+                    return redirect(url_for('show_catalog'))
                 new_item = Item(title=request.form['title'],
                                 description=request.form['description'],
                                 category_id=category.id)
@@ -357,13 +397,17 @@ def add_item_to_category(category_name):
         return redirect(url_for('show_catalog'))
     else:
         return render_template_with_state('newItem.html',
-                               categories=None,
-                               category=category)
+                                          categories=None,
+                                          category=category)
 
 
 @app.route('/catalog/<string:category_name>/<string:item_name>/edit',
            methods=['GET', 'POST'])
 def edit_item(category_name, item_name):
+    if 'user_id' not in login_session:
+        flash('Please login to edit an Item!')
+        return redirect(url_for('show_catalog'))
+
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
@@ -371,6 +415,11 @@ def edit_item(category_name, item_name):
                 .query(Category)\
                 .filter_by(name=category_name)\
                 .one()
+
+            if category.user_id != login_session['user_id']:
+                flash('You are not authorized to add item to {}'
+                      .format(category_name))
+                return redirect(url_for('show_catalog'))
 
             item = session\
                 .query(Item)\
@@ -389,21 +438,35 @@ def edit_item(category_name, item_name):
 
         return redirect(url_for('show_catalog'))
     else:
-        categories = session.query(Category).all()
-        category = session.query(Category).filter_by(name=category_name).one()
+        categories = session\
+            .query(Category)\
+            .filter_by(user_id=login_session['user_id'])\
+            .all()
+        category = session\
+            .query(Category)\
+            .filter_by(name=category_name,
+                       user_id=login_session['user_id'])\
+            .one()
         item = session\
             .query(Item)\
             .filter_by(title=item_name)\
             .one()
         return render_template_with_state('editItem.html',
-                               categories=categories,
-                               category=category,
-                               item=item)
+                                          categories=categories,
+                                          category=category,
+                                          item=item)
 
 
 @app.route('/catalog/items/<string:item_name>/delete', methods=['GET', 'POST'])
 def delete_item(item_name):
+    if 'user_id' not in login_session:
+        flash('Please login to delete an Item!')
+        return redirect(url_for('show_catalog'))
+
     item = session.query(Item).filter_by(title=item_name).one()
+    if item.user_id != login_session['user_id']:
+        flash('You are not authorized to delete item {}'
+              .format(item_name))
     if request.method == 'POST':
         session.delete(item)
         session.commit()
