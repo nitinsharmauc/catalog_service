@@ -362,7 +362,10 @@ def add_item():
                 flash('Item add error. Category selected not present!')
         return redirect(url_for('show_catalog'))
     else:
-        categories = session.query(Category).all()
+        categories = session\
+            .query(Category)\
+            .filter_by(user_id=login_session['user_id'])\
+            .all()
         return render_template_with_state('newItem.html',
                                           categories=categories,
                                           category=None)
