@@ -35,6 +35,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship(User)
+    items = relationship("Item", lazy='select')
 
 # serializable format for JSON
     @property
@@ -42,7 +43,9 @@ class Category(Base):
 
         return {
             'name': self.name,
-            'id': self.id, }
+            'id': self.id,
+            'Items' : [i.serialize for i in self.items]
+        }
 
 
 class Item(Base):

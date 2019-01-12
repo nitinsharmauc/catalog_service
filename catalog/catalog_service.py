@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, redirect, url_for, render_template, request, flash
+from flask import Flask, redirect, url_for, render_template, request, flash, jsonify
 # imports for the login
 from flask import session as login_session
 from oauth2client.client import flow_from_clientsecrets
@@ -13,7 +13,7 @@ import random
 import string
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, exc
 from database_setup import Base, Category, Item, User
 
 
@@ -224,10 +224,14 @@ def show_category(category_name):
         .query(Category)\
         .all()
 
-    selected_category = session\
-        .query(Category)\
-        .filter_by(name=category_name)\
-        .one()
+    try:
+        selected_category = session\
+            .query(Category)\
+            .filter_by(name=category_name)\
+            .one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
 
     items = session\
         .query(Item)\
@@ -261,9 +265,17 @@ def add_category():
         return render_template_with_state('newCategory.html')
 
 
-@app.route('/catalog/<string:category_name>', methods=['GET', 'POST'])
+@app.route('/catalog/<string:category_name>/edit', methods=['GET', 'POST'])
 def edit_category(category_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    try:
+        category = session\
+            .query(Category)\
+            .filter_by(name=category_name)\
+            .one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
+
     if category:
         if 'user_id' in login_session and \
                 category.user_id != login_session['user_id']:
@@ -288,7 +300,15 @@ def edit_category(category_name):
 
 @app.route('/catalog/<string:category_name>/delete', methods=['GET', 'POST'])
 def delete_category(category_name):
-    category = session.query(Category).filter_by(name=category_name).one()
+    try:
+        category = session\
+            .query(Category)\
+            .filter_by(name=category_name)\
+            .one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
+
     if category:
         if 'user_id' in login_session and\
                 category.user_id != login_session['user_id']:
@@ -316,10 +336,14 @@ def delete_category(category_name):
 
 @app.route('/catalog/<string:category_name>/<string:item_name>')
 def show_item(category_name, item_name):
-    item = session\
-        .query(Item)\
-        .filter_by(title=item_name)\
-        .one()
+    try:
+        item = session\
+            .query(Item)\
+            .filter_by(title=item_name)\
+            .one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(item_name))
+        return redirect(url_for('show_catalog'))
 
     user_authorized = 'user_id' in login_session and \
                       item.user_id == login_session['user_id']
@@ -342,24 +366,29 @@ def add_item():
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
-            category = session\
-                .query(Category)\
-                .filter_by(name=category_name)\
-                .one()
-            if category:
-                if category.user_id != login_session['user_id']:
-                    flash('You are not authorized to add item to {}'
-                          .format(category.name))
-                    return redirect(url_for('show_catalog'))
-                new_item = Item(title=request.form['title'],
-                                description=request.form['description'],
-                                category_id=category.id,
-                                user_id=category.user_id)
-                session.add(new_item)
-                session.commit()
-                flash('New Item added successfully!')
-            else:
+            try:
+                category = session\
+                    .query(Category)\
+                    .filter_by(name=category_name)\
+                    .one()
+            except exc.NoResultFound:
                 flash('Item add error. Category selected not present!')
+                return redirect(url_for('show_catalog'))
+
+            if category.user_id != login_session['user_id']:
+                flash('You are not authorized to add item to {}'
+                      .format(category.name))
+                return redirect(url_for('show_catalog'))
+
+            new_item = Item(title=request.form['title'],
+                            description=request.form['description'],
+                            category_id=category.id,
+                            user_id=category.user_id)
+
+            session.add(new_item)
+            session.commit()
+            flash('New Item added successfully!')
+
         return redirect(url_for('show_catalog'))
     else:
         categories = session\
@@ -378,10 +407,15 @@ def add_item_to_category(category_name):
         flash('Please login to add new Item!')
         return redirect(url_for('show_catalog'))
 
-    category = session\
-        .query(Category)\
-        .filter_by(name=category_name)\
-        .one()
+    try:
+        category = session\
+            .query(Category)\
+            .filter_by(name=category_name)\
+            .one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(category_name))
+        return redirect(url_for('show_catalog'))
+
     if request.method == 'POST':
         if request.form['title']:
             if category:
@@ -414,20 +448,28 @@ def edit_item(category_name, item_name):
     if request.method == 'POST':
         if request.form['title']:
             category_name = request.form['category']
-            category = session\
-                .query(Category)\
-                .filter_by(name=category_name)\
-                .one()
+            try:
+                category = session\
+                    .query(Category)\
+                    .filter_by(name=category_name)\
+                    .one()
+            except exc.NoResultFound:
+                flash('{} not found'.format(category_name))
+                return redirect(url_for('show_catalog'))
 
             if category.user_id != login_session['user_id']:
                 flash('You are not authorized to add item to {}'
                       .format(category_name))
                 return redirect(url_for('show_catalog'))
 
-            item = session\
-                .query(Item)\
-                .filter_by(title=item_name)\
-                .one()
+            try:
+                item = session\
+                    .query(Item)\
+                    .filter_by(title=item_name)\
+                    .one()
+            except exc.NoResultFound:
+                flash('{} not found'.format(item_name))
+                redirect(url_for('show_catalog'))
 
             if category and item:
                 item.title = request.form['title']
@@ -445,15 +487,20 @@ def edit_item(category_name, item_name):
             .query(Category)\
             .filter_by(user_id=login_session['user_id'])\
             .all()
-        category = session\
-            .query(Category)\
-            .filter_by(name=category_name,
-                       user_id=login_session['user_id'])\
-            .one()
-        item = session\
-            .query(Item)\
-            .filter_by(title=item_name)\
-            .one()
+        try:
+            category = session\
+                .query(Category)\
+                .filter_by(name=category_name,
+                           user_id=login_session['user_id'])\
+                .one()
+            item = session\
+                .query(Item)\
+                .filter_by(title=item_name)\
+                .one()
+        except exc.NoResultFound:
+            flash('{0} or {1} not found'.format(category_name, item_name))
+            return redirect(url_for('show_catalog'))
+
         return render_template_with_state('editItem.html',
                                           categories=categories,
                                           category=category,
@@ -466,10 +513,16 @@ def delete_item(item_name):
         flash('Please login to delete an Item!')
         return redirect(url_for('show_catalog'))
 
-    item = session.query(Item).filter_by(title=item_name).one()
+    try:
+        item = session.query(Item).filter_by(title=item_name).one()
+    except exc.NoResultFound:
+        flash('{} not found'.format(item_name))
+        return redirect(url_for('show_catalog'))
+
     if item.user_id != login_session['user_id']:
         flash('You are not authorized to delete item {}'
               .format(item_name))
+
     if request.method == 'POST':
         session.delete(item)
         session.commit()
@@ -479,9 +532,41 @@ def delete_item(item_name):
         return render_template_with_state("deleteItem.html", item=item)
 
 
-@app.route('/catalog.json')
-def show_json(category, item):
-    return 'Delete Item {1} in Category {0}'.format(category, item)
+@app.route('/catalog/json')
+def catalog_json():
+    categories = session.query(Category).all()
+    return jsonify(Categories=[c.serialize for c in categories])
+
+
+@app.route('/catalog/<string:category_name>/json')
+def category_json(category_name):
+    try:
+        category = session\
+            .query(Category)\
+            .filter_by(name=category_name)\
+            .one()
+    except exc.NoResultFound:
+        return jsonify(Error='Category {0} not found'
+                       .format(category_name))
+
+    return jsonify(Categories=category.serialize)
+
+
+@app.route('/catalog/<string:category_name>/<string:item_name>/json')
+def item_json(category_name, item_name):
+    try:
+        category = session.query(Category).filter_by(name=category_name).one()
+        item = session.query(Item).filter_by(title=item_name).one()
+    except exc.NoResultFound:
+        return jsonify(
+            Error='Item or Category not found')
+
+    if item.category_id != category.id:
+        return jsonify(
+            Error='Item {0} does not belong to Category {1}'
+                .format(item_name, category_name))
+
+    return jsonify(Categories=item.serialize)
 
 
 if __name__ == "__main__":
