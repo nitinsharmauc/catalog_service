@@ -16,7 +16,7 @@ Specifically this service requires:
 
 So please check that these are installed before proceeding to below steps.
 
-#### First time setup
+### First time setup
 Copy the directory catalog to vagrant. Then cd into it.
 
 Before first run you need to setup the DB so run the database_setup.py as shown below:
@@ -29,7 +29,7 @@ This will create a DB named catalog, with the following tables:
 3. **users** : User information.
 
 
-#### Running the service
+### Running the service
 Once the DB is setup, run the service as shown below:
 
 `$python catalog_service.py`
