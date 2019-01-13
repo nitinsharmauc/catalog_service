@@ -1,0 +1,25 @@
+body{
+    font-family: 'Roboto', sans-serif;
+}
+
+.text-link{
+    color: wheat;
+}
+
+.login-button{
+    margin-top: 20px;
+}
+
+.list-tab-left{
+    margin-right: 1px;
+    padding-left: 4px;
+}
+
+.list-tab-right{
+    padding-left: 4px;
+}
+
+.form-elem{
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
