@@ -13,17 +13,17 @@
 <div class="row bg-primary">
     <div class="col-md-6">
         <h1>Catalog</h1>
-        <a href="{{url_for('show_catalog')}}">Home</a>
+        <a class="text-link" href="{{url_for('show_catalog')}}">Home</a>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-6 text-right">
         <!-- GOOGLE PLUS SIGN IN-->
 
         {% if user_logged_in %}
         <a href="{{url_for('gdisconnect')}}">
-            <button type="button">Logout</button>
+            <button class="login-button" type="button">Logout</button>
         </a>
         {% else %}
-        <div id="signinButton">
+        <div class="login-button" id="signinButton">
             <span class="g-signin" data-scope="openid email" data-clientid="976106975302-26qrp89rt0nmko56qn0534p48t5c5pb8.apps.googleusercontent.com"
                 data-redirecturi="postmessage" data-accesstype="offline" data-cookiepolicy="single_host_origin"
                 data-callback="signInCallback" data-approvalprompt="force">
@@ -65,9 +65,11 @@
                 }
             }
         </script>
-
-
-
         <!--END GOOGLE PLUS SIGN IN -->
+    </div>
+</div>
+<div class='row'>
+    <div class='col-md-12'>
+        <hr>
     </div>
 </div>

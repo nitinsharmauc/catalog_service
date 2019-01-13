@@ -15,13 +15,13 @@
 {% else %}
 <form action="{{url_for('add_item')}}" method='POST'>
 {% endif %}
-        <div class="row">
+        <div class="row form-elem">
             <div class="col-md-1">Title</div>
             <div class="col-md-11">
-                <input type='text' size='30' name='title' placeholder='New Item title'>
+                <input class="text-left" type='text' size='30' name='title' placeholder='New Item title'>
             </div>
         </div>
-        <div class="row">
+        <div class="row form-elem">
             <div class="col-md-1">Description</div>
             <div class="col-md-11">
                 <textarea name='description' rows="2" cols="30" placeholder='Description'></textarea>
@@ -29,7 +29,7 @@
         </div>
 
         {% if not category %}
-        <div class="row">
+        <div class="row form-elem">
             <div class="col-md-1">Category</div>
             <div class="col-md-11">
 
