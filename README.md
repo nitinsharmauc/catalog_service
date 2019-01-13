@@ -52,3 +52,18 @@ After adding items & categories the page may look like below:
  ![Home page logged in](docs/images/main_with_data.png)
  
  Now you can select any category or item to edit or delete it.
+ 
+ ### JSON endpoints
+ The service provides the following API endpoints to get data in json format:
+ 
+ 1. For complete list of categories & associated items: 
+ 
+ `/catalog/json`
+ 
+ 2. For a particular category:
+ 
+ `/catalog/<category_name>/json`
+ 
+ 3. For a particular item:
+ 
+ `/catalog/<category_name>/<item_name>/json`
